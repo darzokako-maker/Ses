@@ -1,0 +1,33 @@
+name: Yahya Voice Build
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install customtkinter numpy scipy sounddevice pyaudio pyinstaller
+
+    - name: Build EXE with PyInstaller
+      run: |
+        pyinstaller --noconfirm --onefile --windowed --name "Yahya_Ses_Degistirici" main.py
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: Yahya_Ses_Degistirici_EXE
+        path: dist/Yahya_Ses_Degistirici.exe
+        
