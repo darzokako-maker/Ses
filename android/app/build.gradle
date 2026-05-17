@@ -1,0 +1,32 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+    id "com.chaquo.python" // Chaquopy pluginini aktif ediyoruz
+}
+
+android {
+    compileSdkVersion 34
+
+    defaultConfig {
+        applicationId "com.yahya.pyroidflutter"
+        minSdkVersion 21
+        targetSdkVersion 34
+        versionCode 1
+        versionName "1.0"
+
+        // Python ve PIP paket ayarları
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
+        python {
+            version "3.10"
+            pip {
+                // Uygulama açıldığında bu kütüphaneler hazır yüklü gelecek!
+                install "opencv-python"
+                install "numpy"
+            }
+        }
+    }
+}
+
