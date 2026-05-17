@@ -4,13 +4,15 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.2.0 <4.0.0' # Modern Flutter sürümlerini zorunlu kılarak V2 Embedding'i garantiliyoruz
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Birbiriyle ve Flutter 3.19 ile tam uyumlu çalışan kilit sürümler:
   chaquopy: ^11.1.1
-  code_text_field: ^2.0.1
+  code_text_field: ^1.1.0
   flutter_highlight: ^0.7.0
 
 dev_dependencies:
