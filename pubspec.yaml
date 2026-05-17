@@ -10,8 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # Birbiriyle ve Flutter 3.19 ile tam uyumlu çalışan kilit sürümler:
-  chaquopy: ^11.1.1
+  # Chaquopy'yi daha eski ve kararlı bir sürüme (10.x.x serisine) çekiyoruz
+  chaquopy: ^10.1.1
   code_text_field: ^1.1.0
   flutter_highlight: ^0.7.0
 
