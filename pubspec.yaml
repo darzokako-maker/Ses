@@ -8,9 +8,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  chaquopy: ^11.1.1 # Flutter içine gerçek Python gömer
-  code_text_field: ^2.0.1 # Pyroid gibi renkli kod yazma alanı (Syntax Highlighting)
-  highlight: ^0.8.0
+  chaquopy: ^11.1.1
+  code_text_field: ^2.0.1
+  flutter_highlight: ^0.7.0 # highlight yerine doğrudan bunu eklemek versiyonu dengeler
 
 dev_dependencies:
   flutter_test:
