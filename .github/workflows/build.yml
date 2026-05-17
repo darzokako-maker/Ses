@@ -1,33 +1,31 @@
-name: Yahya Voice Build
+name: Pyroid Ultra Builder
 
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4 # v3'ten v4'e güncellendi
+    - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5 # v4'ten v5'e güncellendi
-      with:
-        python-version: '3.10'
-
-    - name: Install dependencies
+    - name: Bağımlılıkları Sunucuya Kur
       run: |
-        python -m pip install --upgrade pip
-        pip install customtkinter numpy scipy sounddevice pyaudio pyinstaller
+        sudo apt-get update
+        sudo apt-get install -y build-essential libsqlite3-dev sqlite3 bzip2 libbz2-dev zlib1g-dev libssl-dev openssl libgdbm-dev libgdbm-compat-dev liblzma-dev libreadline-dev libncursesw5-dev libffi-dev uuid-dev libffi7
+        sudo apt-get install -y autoconf automake libtool curl lld cmake Patch
+        pip install --upgrade pip
+        pip install buildozer cython==0.29.33 setuptools
 
-    - name: Build EXE with PyInstaller
-      run: |
-        pyinstaller --noconfirm --onefile --windowed --name "Yahya_Ses_Degistirici" main.py
+    - name: APK Derlemeyi Başlat (PIP & OpenCV Dahil)
+      run: yes | buildozer android debug
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4 # HATA BURADAYDI: v3 yerine v4 yapıldı
+    - name: Hazır APK Dosyasını Yayınla
+      uses: actions/upload-artifact@v4
       with:
-        name: Yahya_Ses_Degistirici_EXE
-        path: dist/Yahya_Ses_Degistirici.exe
+        name: Pyroid-Ultra-Final-APK
+        path: bin/*.apk
         
