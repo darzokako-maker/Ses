@@ -1,9 +1,8 @@
-name: Pyroid Ultra Builder
+name: Flutter APK Builder
 
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:
 
 jobs:
   build:
@@ -12,20 +11,27 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Bağımlılıkları Sunucuya Kur
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential libsqlite3-dev sqlite3 bzip2 libbz2-dev zlib1g-dev libssl-dev openssl libgdbm-dev libgdbm-compat-dev liblzma-dev libreadline-dev libncursesw5-dev libffi-dev uuid-dev
-        sudo apt-get install -y autoconf automake libtool curl lld cmake patch
-        pip install --upgrade pip
-        pip install buildozer cython==0.29.33 setuptools
+    - name: Java Kurulumu
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
 
-    - name: APK Derlemeyi Başlat (PIP & OpenCV Dahil)
-      run: yes | buildozer android debug
+    - name: Flutter Kurulumu
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.x'
+        channel: 'stable'
 
-    - name: Hazır APK Dosyasını Yayınla
+    - name: Bağımlılıkları Çek
+      run: flutter pub get
+
+    - name: APK Derle (Release Mode)
+      run: flutter build apk --release
+
+    - name: APK Dosyasını Yayınla
       uses: actions/upload-artifact@v4
       with:
-        name: Pyroid-Ultra-Final-APK
-        path: bin/*.apk
+        name: Pyroid-Flutter-APK
+        path: build/app/outputs/flutter-apk/app-release.apk
         
