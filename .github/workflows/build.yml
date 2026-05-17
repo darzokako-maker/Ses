@@ -26,7 +26,7 @@ jobs:
 
     - name: Bağımlılıkları Temizle ve Çek
       run: |
-        flutter pub clean
+        flutter clean
         flutter pub get
 
     - name: APK Derle (Release Mode)
