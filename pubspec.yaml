@@ -10,13 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # Versiyon uyuşmazlığını kökten çözen canlı repo bağlantısı:
-  chaquopy:
-    git:
-      url: https://github.com/Chaquopy/chaquopy.git
-      path: flutter
-
-  code_text_field: ^1.1.0
+  # Git bağlantısı kaldırıldı, pub.dev üzerindeki resmi sürümler eklendi:
+  chaquopy: ^11.1.1
+  code_text_field: ^2.0.1
   flutter_highlight: ^0.7.0
 
 dev_dependencies:
