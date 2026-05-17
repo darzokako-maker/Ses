@@ -1,93 +1,162 @@
-import customtkinter as ctk
-import sounddevice as sd
-import numpy as np
-from scipy import signal
-import threading
+import sys
+import io
+import os
+from kivymd.app import MDApp
+from kivymd.uix.screen import MDScreen
+from kivymd.uix.toolbar import MDTopAppBar
+from kivymd.uix.navigationdrawer import MDNavigationDrawer, MDNavigationDrawerMenu, MDNavigationDrawerHeader, MDNavigationDrawerItem
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.textfield import MDTextField
+from kivymd.uix.label import MDLabel
+from kivymd.uix.button import MDRaisedButton
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.screenmanager import ScreenManager, Screen
 
-class YahyaVoiceChanger(ctk.CTk):
-    def __init__(self):
-        super().__init__()
+# Kütüphanelerin indirileceği yerel dizini Python yoluna (PATH) ekliyoruz
+TARGET_PIP_DIR = os.path.join(os.environ.get('ANDROID_PRIVATE_DATA', '.'), 'site-packages')
+if TARGET_PIP_DIR not in sys.path:
+    sys.path.append(TARGET_PIP_DIR)
+os.makedirs(TARGET_PIP_DIR, exist_ok=True)
 
-        # Pencere Ayarları
-        self.title("Yahya Yapımı - Voice Changer Pro")
-        self.geometry("500x600")
-        ctk.set_appearance_mode("dark")
+class EditorScreen(Screen):
+    pass
 
-        # Değişkenler
-        self.is_running = False
-        self.pitch_shift = 1.0  # 1.0 normal, 0.5 kalın, 1.5 ince
-        self.sample_rate = 44100
-        self.buffer_size = 1024
-        self.stream = None
+class PipScreen(Screen):
+    pass
 
-        # --- ARAYÜZ ---
-        self.label_head = ctk.CTkLabel(self, text="YAHYA SES DEĞİŞTİRİCİ", font=("Impact", 30), text_color="#FF8C00")
-        self.label_head.pack(pady=20)
+class AdvancedPyroidApp(MDApp):
+    def build(self):
+        self.theme_cls.theme_style = "Dark"
+        self.theme_cls.primary_palette = "Orange"
 
-        # Pitch Kontrol
-        self.label_pitch = ctk.CTkLabel(self, text=f"Ses Tonu (Pitch): {self.pitch_shift}")
-        self.label_pitch.pack()
+        # Ekran Yönetici (ScreenManager) ile sayfalar arası geçiş yapıyoruz
+        self.sm = ScreenManager()
+
+        # ----------------- EDITÖR EKRANI -----------------
+        editor_scr = EditorScreen(name='editor')
+        editor_layout = MDBoxLayout(orientation='vertical')
         
-        self.slider_pitch = ctk.CTkSlider(self, from_=0.5, to=2.0, command=self.update_pitch)
-        self.slider_pitch.set(self.pitch_shift)
-        self.slider_pitch.pack(pady=10, padx=30, fill="x")
+        toolbar = MDTopAppBar(title="Pyroid Pro IDE")
+        toolbar.left_action_items = [["menu", lambda x: self.nav_drawer.set_state("open")]]
+        toolbar.right_action_items = [["play", lambda x: self.run_python_code()]]
+        editor_layout.add_widget(toolbar)
 
-        self.info_text = ctk.CTkLabel(self, text="0.5: Canavar/Kalın | 1.0: Normal | 1.5+: Çocuk/İnce", font=("Arial", 10))
-        self.info_text.pack()
+        self.code_input = MDTextField(
+            hint_text="Python kodunuzu buraya yazın...",
+            multiline=True,
+            size_hint_y=0.6,
+            text="import cv2\nimport requests\n\nprint('OpenCV:', cv2.__version__)\nprint('Requests Modülü Hazır!')"
+        )
+        editor_layout.add_widget(self.code_input)
 
-        # Başlat/Durdur Butonu
-        self.btn_toggle = ctk.CTkButton(self, text="SES DEĞİŞTİRMEYİ BAŞLAT", font=("Arial", 14, "bold"),
-                                        fg_color="green", hover_color="#006400", command=self.toggle_voice)
-        self.btn_toggle.pack(pady=40, padx=50, fill="x")
+        terminal_box = MDBoxLayout(orientation='vertical', size_hint_y=0.4, padding=10)
+        terminal_box.add_widget(MDLabel(text="KONSOL ÇIKTISI:", theme_text_color="Custom", text_color=(1, 0.6, 0, 1), size_hint_y=None, height=20))
+        scroll = ScrollView()
+        self.terminal_output = MDLabel(text="Program çalıştırılmaya hazır...\n", halign="left", valign="top", size_hint_y=None)
+        self.terminal_output.bind(texture_size=self.terminal_output.setter('size'))
+        scroll.add_widget(self.terminal_output)
+        terminal_box.add_widget(scroll)
+        editor_layout.add_widget(terminal_box)
+        
+        editor_scr.add_widget(editor_layout)
 
-        # Durum Bilgisi
-        self.st_label = ctk.CTkLabel(self, text="DURUM: KAPALI", text_color="red", font=("Arial", 12, "bold"))
-        self.st_label.pack()
+        # ----------------- PIP MANAGER EKRANI -----------------
+        pip_scr = PipScreen(name='pip_manager')
+        pip_layout = MDBoxLayout(orientation='vertical')
+        
+        pip_toolbar = MDTopAppBar(title="PIP Paket Yöneticisi")
+        pip_toolbar.left_action_items = [["menu", lambda x: self.nav_drawer.set_state("open")]]
+        pip_layout.add_widget(pip_toolbar)
 
-        ctk.CTkLabel(self, text="Not: Discord'da kullanmak için VB-Cable gereklidir.", text_color="gray", font=("Arial", 10)).pack(side="bottom", pady=10)
+        pip_input_box = MDBoxLayout(orientation='horizontal', size_hint_y=None, height=60, padding=10, spacing=10)
+        self.package_input = MDTextField(hint_text="Kütüphane adı (Örn: requests, sympy)", multiline=False)
+        install_btn = MDRaisedButton(text="Yükle", on_release=lambda x: self.install_package())
+        pip_input_box.add_widget(self.package_input)
+        pip_input_box.add_widget(install_btn)
+        pip_layout.add_widget(pip_input_box)
 
-    def update_pitch(self, val):
-        self.pitch_shift = round(float(val), 2)
-        self.label_pitch.configure(text=f"Ses Tonu (Pitch): {self.pitch_shift}")
+        pip_terminal_box = MDBoxLayout(orientation='vertical', padding=10)
+        pip_scroll = ScrollView()
+        self.pip_output = MDLabel(text="Yüklemek istediğiniz paket adını yazıp 'Yükle' butonuna basın.\n", halign="left", valign="top", size_hint_y=None)
+        self.pip_output.bind(texture_size=self.pip_output.setter('size'))
+        pip_scroll.add_widget(self.pip_output)
+        pip_terminal_box.add_widget(pip_scroll)
+        pip_layout.add_widget(pip_terminal_box)
 
-    def audio_callback(self, indata, outdata, frames, time, status):
-        """Sesi anlık olarak işleyen fonksiyon"""
-        if self.is_running:
-            # Sesi işle (Basic Pitch Shift)
-            # Not: Gerçek zamanlı pitch shift için basit bir resampling kullanıyoruz
-            indices = np.round(np.arange(0, len(indata), self.pitch_shift))
-            indices = indices[indices < len(indata)].astype(int)
-            
-            resampled_data = indata[indices]
-            
-            # Veriyi orijinal boyuta getir (Padding veya Truncate)
-            if len(resampled_data) < frames:
-                resampled_data = np.pad(resampled_data, ((0, frames - len(resampled_data)), (0, 0)), mode='constant')
+        pip_scr.add_widget(pip_layout)
+
+        # Ekranları yöneticie ekle
+        self.sm.add_widget(editor_scr)
+        self.sm.add_widget(pip_scr)
+
+        # ----------------- YAN MENÜ (NAVIGATION DRAWER) -----------------
+        self.main_box = MDBoxLayout(orientation='vertical')
+        self.main_box.add_widget(self.sm)
+
+        self.nav_drawer = MDNavigationDrawer()
+        menu = MDNavigationDrawerMenu()
+        menu.add_widget(MDNavigationDrawerHeader(title="Pyroid Ultra", text="Gelişmiş Seçenekler"))
+        
+        item_editor = MDNavigationDrawerItem(icon="code-tags", text="Kod Editörü")
+        item_editor.bind(on_release=lambda x: self.switch_screen('editor'))
+        menu.add_widget(item_editor)
+
+        item_pip = MDNavigationDrawerItem(icon="package-variant-closed", text="PIP Paket Yöneticisi")
+        item_pip.bind(on_release=lambda x: self.switch_screen('pip_manager'))
+        menu.add_widget(item_pip)
+        
+        self.nav_drawer.add_widget(menu)
+        
+        # Ekran ve Yan Menüyü kapsayan üst yapı
+        root_screen = MDScreen()
+        root_screen.add_widget(self.main_box)
+        root_screen.add_widget(self.nav_drawer)
+
+        return root_screen
+
+    def switch_screen(self, screen_name):
+        self.sm.current = screen_name
+        self.nav_drawer.set_state("close")
+
+    def run_python_code(self):
+        """Yazılan kodu çalıştırır"""
+        code = self.code_input.text
+        old_stdout = sys.stdout
+        redirected_output = io.StringIO()
+        sys.stdout = redirected_output
+
+        try:
+            # Kodu izole edilmiş bir global/local sözlükte çalıştır
+            exec(code, {'sys': sys, 'os': os})
+            output = redirected_output.getvalue()
+            self.terminal_output.text = f"[KOD ÇALIŞTI]\n\n{output}"
+        except Exception as e:
+            self.terminal_output.text = f"[HATA]\n\n{str(e)}"
+        finally:
+            sys.stdout = old_stdout
+
+    def install_package(self):
+        """Kullanıcının istediği paketi pip kullanarak arka planda indirir"""
+        package_name = self.package_input.text.strip()
+        if not package_name:
+            self.pip_output.text += "Lütfen geçerli bir paket adı girin!\n"
+            return
+
+        self.pip_output.text += f"\n[{package_name}] yükleniyor, lütfen bekleyin...\n"
+        
+        try:
+            # pip modülünü kodun içinden çağırıyoruz ve hedef dizine kurduruyoruz
+            import pip
+            if hasattr(pip, 'main'):
+                pip.main(['install', '--target', TARGET_PIP_DIR, package_name])
             else:
-                resampled_data = resampled_data[:frames]
-                
-            outdata[:] = resampled_data
-        else:
-            outdata[:] = indata
-
-    def toggle_voice(self):
-        if not self.is_running:
-            self.is_running = True
-            self.btn_toggle.configure(text="SESİ DURDUR", fg_color="red", hover_color="#8B0000")
-            self.st_label.configure(text="DURUM: AKTİF (SES İŞLENİYOR)", text_color="green")
+                from pip._internal import main as pip_main
+                pip_main(['install', '--target', TARGET_PIP_DIR, package_name])
             
-            # Ses akışını başlat
-            self.stream = sd.Stream(callback=self.audio_callback, channels=1, samplerate=self.sample_rate, blocksize=self.buffer_size)
-            self.stream.start()
-        else:
-            self.is_running = False
-            self.btn_toggle.configure(text="SES DEĞİŞTİRMEYİ BAŞLAT", fg_color="green", hover_color="#006400")
-            self.st_label.configure(text="DURUM: KAPALI", text_color="red")
-            if self.stream:
-                self.stream.stop()
-                self.stream.close()
+            self.pip_output.text += f"[BAŞARILI] {package_name} başarıyla kuruldu! Artık editörde import edebilirsiniz.\n"
+        except Exception as e:
+            self.pip_output.text += f"[HATA] Paket yüklenirken sorun oluştu: {str(e)}\n"
 
 if __name__ == "__main__":
-    app = YahyaVoiceChanger()
-    app.mainloop()
-      
+    AdvancedPyroidApp().run()
+    
