@@ -25,11 +25,14 @@ android {
         versionCode 1
         versionName "1.0"
 
+        // Chaquopy için mimari filtreleri
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a"
         }
+
+        // Chaquopy 10.x serisi için en kararlı Python ve kütüphane konfigürasyonu
         python {
-            version "3.10"
+            version "3.8"
             pip {
                 install "opencv-python"
                 install "numpy"
