@@ -1,0 +1,21 @@
+name: pyroid_flutter_clone
+description: "Flutter ile Gelişmiş Python IDE"
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  chaquopy: ^11.1.1 # Flutter içine gerçek Python gömer
+  code_text_field: ^2.0.1 # Pyroid gibi renkli kod yazma alanı (Syntax Highlighting)
+  highlight: ^0.8.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  
