@@ -1,18 +1,17 @@
 name: pyroid_flutter_clone
 description: "Flutter ile Gelişmiş Python IDE"
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.2.0 <4.0.0' # Modern Flutter sürümlerini zorunlu kılarak V2 Embedding'i garantiliyoruz
 
 dependencies:
   flutter:
     sdk: flutter
-  
-  # Versiyon kilitlenmelerini önlemek için en esnek ve kararlı yöntem:
-  chaquopy: any
-  code_text_field: any
-  flutter_highlight: any
+  chaquopy: ^11.1.1
+  code_text_field: ^2.0.1
+  flutter_highlight: ^0.7.0
 
 dev_dependencies:
   flutter_test:
