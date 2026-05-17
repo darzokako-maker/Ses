@@ -10,8 +10,12 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # Chaquopy'yi daha eski ve kararlı bir sürüme (10.x.x serisine) çekiyoruz
-  chaquopy: ^10.1.1
+  # Versiyon uyuşmazlığını kökten çözen canlı repo bağlantısı:
+  chaquopy:
+    git:
+      url: https://github.com/Chaquopy/chaquopy.git
+      path: flutter
+
   code_text_field: ^1.1.0
   flutter_highlight: ^0.7.0
 
